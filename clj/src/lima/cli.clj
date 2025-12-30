@@ -16,11 +16,15 @@
 
 (defn import-files
   "Import files"
-  [{:keys [context _arguments]}]
-  (let [imports _arguments
-        digest (beanfile/digest context)
+  [{config-path :config beanpath :context import-paths  :_arguments}]
+  (let [config (if config-path (import/read-config config-path) import/DEFAULT-CONFIG)
+        digest (and context (beanfile/digest context))
+        import-paths _arguments
+        classified (mapv (fn [import-path] (import/classify config import-path)) import-paths)
         ingested (import/)]
-    (println "import" imports "with digest" digest)))
+    (println "import" imports "with digest" digest)
+    (import)
+    ))
 
 (def CONFIGURATION
   {:command "lima",
@@ -46,8 +50,9 @@
                           :option "context",
                           :type :string,
                           :env "LIMA_BEANPATH"}
-                         {:as "Import configuration",
+                         {:as "Import config path",
                           :option "config",
                           :type :string,
-                          :env "LIMA_IMPORT_CONFIG"}],
+                          :env "LIMA_IMPORT_CONFIG"
+                          }],
                   :runs import-files}]})

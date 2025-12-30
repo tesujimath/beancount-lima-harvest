@@ -718,7 +718,6 @@ enum Keyword {
     Document,
     Documents,
     Event,
-    Fields,
     Fifo,
     Flag,
     Header,

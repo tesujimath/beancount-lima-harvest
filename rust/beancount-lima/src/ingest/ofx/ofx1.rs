@@ -151,7 +151,7 @@ pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Ingest> {
         _ => Err(eyre!("unsupported OFX1 document {:?}", path)),
     }
     .map(|(curdef, acctid, balamt, dtasof, stmttrns)| Ingest {
-        header: [
+        hdr: [
             ("dialect", "ofx1".to_string()),
             ("curdef", curdef),
             ("acctid", acctid),
@@ -160,7 +160,7 @@ pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Ingest> {
         ]
         .into_iter()
         .collect::<HashMap<_, _>>(),
-        txn_fields: StmtTrn::fields(),
+        txn_keys: StmtTrn::fields(),
         txns: stmttrns
             .into_iter()
             .map(StmtTrn::values)

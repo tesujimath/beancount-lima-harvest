@@ -5,8 +5,8 @@ use std::{collections::HashMap, io::Write, path::Path};
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct Ingest {
-    pub(crate) header: HashMap<&'static str, String>,
-    pub(crate) txn_fields: Vec<String>,
+    pub(crate) hdr: HashMap<&'static str, String>,
+    pub(crate) txn_keys: Vec<String>,
     pub(crate) txns: Vec<Vec<String>>,
 }
 

@@ -7,10 +7,10 @@ use super::Ingest;
 pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
     let csv_file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(csv_file);
-    let fields = rdr
+    let column_names = rdr
         .headers()?
         .iter()
-        .map(|field| slugify(field, "", "-", None))
+        .map(|column_name| slugify(column_name, "", "-", None))
         .collect::<Vec<_>>();
     let mut transactions = Vec::<Vec<String>>::default();
     for transaction in rdr.records() {
@@ -24,8 +24,8 @@ pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
     }
 
     Ok(Ingest {
-        header: HashMap::default(),
-        txn_fields: fields,
+        hdr: HashMap::default(),
+        txn_keys: column_names,
         txns: transactions,
     })
 }
