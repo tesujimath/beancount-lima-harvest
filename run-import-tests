@@ -11,6 +11,7 @@ for expected_beancount in *.expected.beancount; do
     ledger_path="${expected_base}.beancount"
     output_path="${expected_base}.actual.beancount"
     echo
+    # TODO fix import tests for lima-harvest
     echo lima -o standalone --ledger "$ledger_path" import "$expected_base"/*
     lima -o standalone --ledger "$ledger_path" import "$expected_base"/* >"$output_path"
     diff -w "$expected_beancount" "$output_path" || {

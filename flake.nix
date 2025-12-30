@@ -1,5 +1,5 @@
 {
-  description = "A development environment flake for beancount-lima.";
+  description = "beancount-lima-harvest importer for Beancount/Lima";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -8,10 +8,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
-    autobean-format = {
-      url = "github:SEIAROTg/autobean-format";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = inputs:
@@ -21,9 +17,6 @@
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs {
             inherit system overlays;
-          };
-          flakePkgs = {
-            autobean-format = inputs.autobean-format.packages.${system}.default;
           };
           # cargo-nightly based on https://github.com/oxalica/rust-overlay/issues/82
           nightly = pkgs.rust-bin.selectLatestNightlyWith (t: t.default);
@@ -45,12 +38,12 @@
             clojure
           ];
 
-          beancount-lima-pod =
+          beancount-lima-harvest =
             let cargo = builtins.fromTOML (builtins.readFile ./rust/Cargo.toml);
             in pkgs.rustPlatform.buildRustPackage
               {
-                pname = "beancount-lima-pod";
-                version = cargo.workspace.package.version;
+                pname = "beancount-lima-harvest";
+                version = cargo.package.version;
 
                 src = ./rust;
 
@@ -81,25 +74,20 @@
               clojure-lsp
               neil
               jre
-
-              # useful tools:
-              beancount
-              beanquery
-              flakePkgs.autobean-format
             ] ++ ci-packages;
 
             shellHook = ''
-              PATH=$PATH:$(pwd)/rust/target/debug
+              PATH=$PATH:$(pwd)/scripts.dev:$(pwd)/rust/target/debug
             '';
           };
 
-          packages.default = beancount-lima-pod;
+          packages.default = beancount-lima-harvest;
 
           apps = {
             tests = {
               type = "app";
-              program = "${writeShellScript "beancount-lima-tests" ''
-                export PATH=${pkgs.lib.makeBinPath (ci-packages ++ [beancount-lima-pod])}
+              program = "${writeShellScript "beancount-lima-harvest-tests" ''
+                export PATH=${pkgs.lib.makeBinPath (ci-packages ++ [beancount-lima-harvest])}
                 just test
               ''}";
             };

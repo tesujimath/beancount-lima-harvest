@@ -1,10 +1,26 @@
+use clap::Parser;
 use color_eyre::eyre::{eyre, Result};
 use regex::Regex;
+use std::path::PathBuf;
 use std::{fs::read_to_string, path::Path};
 
-use crate::ingest::Ingest;
+#[derive(Parser)]
+#[command(version, about = "Hull an OFX file for import into lima-harvest", long_about = None)]
+struct Cli {
+    /// File to ingest
+    ofx_path: PathBuf,
+}
 
-pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
+fn main() -> Result<()> {
+    let out_w = &std::io::stdout();
+
+    let cli = Cli::parse();
+
+    let ingest = read_ofx_file(&cli.ofx_path)?;
+    ingest.write(out_w)
+}
+
+pub(crate) fn read_ofx_file(path: &Path) -> Result<Ingest> {
     let ofx_content = read_to_string(path)?;
     let first_line = ofx_content.lines().next();
     if let Some(first_line) = first_line {
@@ -23,4 +39,9 @@ pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
     }
 }
 
+#[path = "../hull.rs"]
+mod hull;
+use hull::Ingest;
+
+#[path = "../ofx1.rs"]
 mod ofx1;

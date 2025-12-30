@@ -1,10 +1,28 @@
+use clap::Parser;
 use color_eyre::eyre::Result;
 use slugify::slugify;
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
-use super::Ingest;
+#[derive(Parser)]
+#[command(version, about = "Hull an CSV file for import into lima-harvest", long_about = None)]
+struct Cli {
+    /// File to ingest
+    csv_path: PathBuf,
+}
 
-pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
+fn main() -> Result<()> {
+    let out_w = &std::io::stdout();
+
+    let cli = Cli::parse();
+
+    let ingest = read_csv_file(&cli.csv_path)?;
+    ingest.write(out_w)
+}
+
+pub(crate) fn read_csv_file(path: &Path) -> Result<Ingest> {
     let csv_file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(csv_file);
     let column_names = rdr
@@ -29,3 +47,7 @@ pub(crate) fn ingest(path: &Path) -> Result<Ingest> {
         txns: transactions,
     })
 }
+
+#[path = "../hull.rs"]
+mod hull;
+use hull::Ingest;

@@ -60,7 +60,7 @@ impl Digest {
 }
 
 #[derive(Default, Debug)]
-struct DigestBuilder<'a> {
+pub(crate) struct DigestBuilder<'a> {
     accid_key: String,
     txnid_keys: Vec<String>,
     payee2_key: String,
@@ -73,7 +73,7 @@ struct DigestBuilder<'a> {
 }
 
 impl<'a> DigestBuilder<'a> {
-    fn new(
+    pub(crate) fn new(
         accid_key: String,
         txnid_keys: Vec<String>,
         payee2_key: String,
@@ -92,7 +92,7 @@ impl<'a> DigestBuilder<'a> {
         }
     }
 
-    fn build<W>(self, sources: &BeancountSources, error_w: W) -> Result<Digest>
+    pub(crate) fn build<W>(self, sources: &BeancountSources, error_w: W) -> Result<Digest>
     where
         W: Write + Copy,
     {
@@ -117,7 +117,7 @@ impl<'a> DigestBuilder<'a> {
         }
     }
 
-    fn directive(&mut self, directive: &'a Spanned<parser::Directive<'a>>) {
+    pub(crate) fn directive(&mut self, directive: &'a Spanned<parser::Directive<'a>>) {
         use parser::DirectiveVariant::*;
 
         if let Open(open) = directive.variant() {

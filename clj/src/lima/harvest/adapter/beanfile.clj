@@ -11,7 +11,7 @@
   (edn/read-string {:readers readers} s))
 
 (defn digest
-  "Read EDN from lima-pod digest and return or throw"
+  "Read EDN from lima-digest and return or throw"
   [beancount-path]
   (let [digested (shell/sh "lima-digest" beancount-path)]
     (if (= (digested :exit) 0)

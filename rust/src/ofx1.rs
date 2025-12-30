@@ -2,7 +2,7 @@ use color_eyre::eyre::{eyre, Result};
 use serde::Deserialize;
 use std::{collections::HashMap, path::Path};
 
-use crate::ingest::Ingest;
+use crate::hull::Ingest;
 
 #[derive(Deserialize, Debug)]
 struct Document {

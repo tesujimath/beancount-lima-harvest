@@ -1,16 +1,12 @@
 [package]
-name = "beancount-lima"
-version = "0.6.0"                                           # keep in step with below
+name = "beancount-lima-harvest"
+version = "0.6.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-description = "Beancount frontend using Lima parser"
-homepage = "https://github.com/tesujimath/beancount-lima"
-repository = "https://github.com/tesujimath/beancount-lima"
+description = "Beancount importer backend for Lima"
+homepage = "https://github.com/tesujimath/beancount-lima-harvest"
+repository = "https://github.com/tesujimath/beancount-lima-harvest"
 readme = "../README.md"
-
-[[bin]]
-name = "lima-pod"
-path = "src/main.rs"
 
 [dependencies]
 beancount-parser-lima = "0.14.1"
@@ -18,9 +14,7 @@ clap = { version = "4.5.42", features = ["derive"] }
 color-eyre = "0.6.5"
 csv = "1.3.1"
 hashbrown = "0.15.4"
-joinery = "3.1.0"
 regex = "1.11.1"
-rstest = "0.26.1"
 rust_decimal = "1.37.2"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145" }
@@ -29,11 +23,3 @@ slugify = "0.1.0"
 strum = "0.27.2"
 strum_macros = "0.27.2"
 time = { version = "0.3.41", features = ["local-offset", "parsing"] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-
-[dev-dependencies]
-#time = { version = "0.3.41", features = ["macros"] }
-
-[build-dependencies]
-build-deps = "0.1.4"

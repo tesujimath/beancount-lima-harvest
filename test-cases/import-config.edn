@@ -1,6 +1,6 @@
-{:classifiers [{:ingester ["lima-pod" "ingest" :path], :path-glob "**.ofx"}
+{:classifiers [{:ingester ["hull-ofx" :path], :path-glob "**.ofx"}
                {:hdr {:cur "GBP", :dialect "firstdirect"},
-                :ingester ["lima-pod" "ingest" :path],
+                :ingester ["hull-csv" :path],
                 :path-glob "**/firstdirect/**.csv"}],
  :mappers
    [{{"dialect" "ofx1"} {:bal {:accid [:hdr "acctid"],

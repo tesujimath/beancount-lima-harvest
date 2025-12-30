@@ -4,16 +4,18 @@ use std::fmt::{self, Display, Formatter, Write};
 use std::iter::{once, repeat};
 use strum_macros::{EnumIter, EnumString, IntoStaticStr};
 
-pub(crate) fn write_digest_as_edn<W>(digest: &Digest, out_w: W) -> Result<()>
-where
-    W: std::io::Write + Copy,
-{
-    use std::io::{BufWriter, Write};
+impl Digest {
+    pub(crate) fn write<W>(&self, out_w: W) -> Result<()>
+    where
+        W: std::io::Write + Copy,
+    {
+        use std::io::{BufWriter, Write};
 
-    let mut buffered_out_w = BufWriter::new(out_w);
-    writeln!(buffered_out_w, "{}\n", Edn(digest))?;
+        let mut buffered_out_w = BufWriter::new(out_w);
+        writeln!(buffered_out_w, "{}\n", Edn(self))?;
 
-    Ok(())
+        Ok(())
+    }
 }
 
 // TODO improve this, it's a bit ugly
