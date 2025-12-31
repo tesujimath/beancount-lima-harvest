@@ -16,11 +16,11 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let ingest = read_ofx_file(&cli.ofx_path)?;
-    ingest.write(out_w)
+    let hull = read_ofx_file(&cli.ofx_path)?;
+    hull.write(out_w)
 }
 
-pub(crate) fn read_ofx_file(path: &Path) -> Result<Ingest> {
+pub(crate) fn read_ofx_file(path: &Path) -> Result<Hull> {
     let ofx_content = read_to_string(path)?;
     let first_line = ofx_content.lines().next();
     if let Some(first_line) = first_line {
@@ -41,7 +41,7 @@ pub(crate) fn read_ofx_file(path: &Path) -> Result<Ingest> {
 
 #[path = "../hull.rs"]
 mod hull;
-use hull::Ingest;
+use hull::Hull;
 
 #[path = "../ofx1.rs"]
 mod ofx1;

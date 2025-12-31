@@ -4,13 +4,12 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "kebab-case")]
-pub struct Ingest {
-    pub hdr: HashMap<&'static str, String>,
-    pub txn_keys: Vec<String>,
-    pub txns: Vec<Vec<String>>,
+pub struct Hull {
+    pub hdr: HashMap<String, String>,
+    pub txns: Vec<HashMap<String, String>>,
 }
 
-impl Ingest {
+impl Hull {
     pub(crate) fn write<W>(&self, out_w: W) -> Result<()>
     where
         W: std::io::Write + Copy,
@@ -18,8 +17,8 @@ impl Ingest {
         use std::io::{BufWriter, Write};
 
         let mut buffered_out_w = BufWriter::new(out_w);
-        let ingest_json = serde_json::to_string(self)?;
-        writeln!(buffered_out_w, "{}\n", &ingest_json)?;
+        let hull_json = serde_json::to_string(self)?;
+        writeln!(buffered_out_w, "{}\n", &hull_json)?;
 
         Ok(())
     }

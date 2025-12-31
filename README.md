@@ -4,7 +4,7 @@ This is a new importer and framework for [Beancount](https://github.com/beancoun
 
 ## Design Principles
 
-The import process is governed by configuration in [EDN](https://github.com/edn-format/edn), as in [this example](test-cases/import-config.edn).
+The import process is governed by configuration in [EDN](https://github.com/edn-format/edn), as in [this example](test-cases/harvest.edn).
 There are two phases.
 
 ### Phase 1 - Hulling

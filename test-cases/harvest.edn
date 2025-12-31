@@ -1,0 +1,29 @@
+{:classifiers [{:ingester ["hull-ofx" :path], :path-glob "**.ofx"}
+               {:hdr {:cur "GBP", :dialect "firstdirect"},
+                :hdr-fn lima.harvest.core.account/infer-from-path,
+                :ingester ["hull-csv" :path],
+                :path-glob "**/firstdirect/**.csv"}],
+ :realizers
+   [[{:dialect "ofx1"}
+     {:bal {:accid [:hdr :acctid],
+            :cur [:hdr :curdef],
+            :date [:hdr :dtasof :date "yyyyMMdd"],
+            :units [:hdr :balamt :decimal]},
+      :txn {:accid [:hdr :acctid],
+            :cur [:hdr :curdef],
+            :date [:txn :dtposted :date "yyyyMMdd"],
+            :narration [:txn :memo],
+            :payee [:txn :name],
+            :txnid [:concat [:hdr :acctid] "." [:txn :fitid]],
+            :units [:txn :trnamt :decimal]}}]
+    [{:dialect "firstdirect"}
+     {:bal {:accid [:hdr :accid],
+            :cur [:hdr :cur],
+            :date [:txn :date :date "dd/MM/yyyy"],
+            :units [:txn :balance :decimal]},
+      :txn {:accid [:hdr :accid],
+            :cur [:hdr :cur],
+            :date [:txn :date :date "dd/MM/yyyy"],
+            :description [:txn :description],
+            :units [:txn :amount :decimal]},
+      :txn-fn lima.harvest.contrib.firstdirect/payee-narration}]]}

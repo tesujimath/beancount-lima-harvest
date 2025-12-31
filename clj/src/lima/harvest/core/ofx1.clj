@@ -12,7 +12,6 @@
          dtasof
          ;; Beancount balance date is as of midnight at the beginning of
          ;; the day, but we have the end of the day, so add 1 day
-         (let [date (jt/plus (jt/local-date dtasof (jt/formatter "yyyyMMdd"))
-                             (jt/days 1))
+         (let [date (jt/plus (jt/local-date "yyyyMMdd" dtasof) (jt/days 1))
                units (parse-decimal-cents balamt)]
            {:date date, :account account, :units units, :cur curdef}))))

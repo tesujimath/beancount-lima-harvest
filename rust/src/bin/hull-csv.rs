@@ -18,11 +18,11 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let ingest = read_csv_file(&cli.csv_path)?;
-    ingest.write(out_w)
+    let hull = read_csv_file(&cli.csv_path)?;
+    hull.write(out_w)
 }
 
-pub(crate) fn read_csv_file(path: &Path) -> Result<Ingest> {
+pub(crate) fn read_csv_file(path: &Path) -> Result<Hull> {
     let csv_file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(csv_file);
     let column_names = rdr
@@ -30,24 +30,24 @@ pub(crate) fn read_csv_file(path: &Path) -> Result<Ingest> {
         .iter()
         .map(|column_name| slugify(column_name, "", "-", None))
         .collect::<Vec<_>>();
-    let mut transactions = Vec::<Vec<String>>::default();
+    let mut transactions = Vec::<HashMap<String, String>>::default();
     for transaction in rdr.records() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here..
-        let transaction = transaction?
+        let transaction = column_names
             .iter()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>();
+            .zip(transaction?.iter())
+            .map(|(k, v)| (k.clone(), v.to_string()))
+            .collect::<HashMap<_, _>>();
         transactions.push(transaction);
     }
 
-    Ok(Ingest {
+    Ok(Hull {
         hdr: HashMap::default(),
-        txn_keys: column_names,
         txns: transactions,
     })
 }
 
 #[path = "../hull.rs"]
 mod hull;
-use hull::Ingest;
+use hull::Hull;

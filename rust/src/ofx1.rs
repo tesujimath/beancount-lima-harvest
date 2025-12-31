@@ -2,7 +2,7 @@ use color_eyre::eyre::{eyre, Result};
 use serde::Deserialize;
 use std::{collections::HashMap, path::Path};
 
-use crate::hull::Ingest;
+use crate::hull::Hull;
 
 #[derive(Deserialize, Debug)]
 struct Document {
@@ -78,28 +78,23 @@ struct LedgerBal {
     dtasof: String,
 }
 
-impl StmtTrn {
-    fn fields() -> Vec<String> {
-        // TODO use a macro for pulling out all field names from the struct
-        ["trntype", "dtposted", "trnamt", "fitid", "name", "memo"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-    }
-
-    fn values(self) -> Vec<String> {
-        vec![
-            self.trntype,
-            self.dtposted,
-            self.trnamt,
-            self.fitid,
-            self.name,
-            self.memo,
+impl From<StmtTrn> for HashMap<String, String> {
+    fn from(value: StmtTrn) -> Self {
+        [
+            ("trntype", value.trntype),
+            ("dtposted", value.dtposted),
+            ("trnamt", value.trnamt),
+            ("fitid", value.fitid),
+            ("name", value.name),
+            ("memo", value.memo),
         ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect::<HashMap<_, _>>()
     }
 }
 
-pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Ingest> {
+pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Hull> {
     let sgml = sgmlish::Parser::builder()
         .lowercase_names()
         .expand_entities(|entity| match entity {
@@ -150,7 +145,7 @@ pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Ingest> {
 
         _ => Err(eyre!("unsupported OFX1 document {:?}", path)),
     }
-    .map(|(curdef, acctid, balamt, dtasof, stmttrns)| Ingest {
+    .map(|(curdef, acctid, balamt, dtasof, stmttrns)| Hull {
         hdr: [
             ("dialect", "ofx1".to_string()),
             ("curdef", curdef),
@@ -159,11 +154,11 @@ pub(crate) fn parse(path: &Path, ofx_content: &str) -> Result<Ingest> {
             ("dtasof", dtasof),
         ]
         .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
         .collect::<HashMap<_, _>>(),
-        txn_keys: StmtTrn::fields(),
         txns: stmttrns
             .into_iter()
-            .map(StmtTrn::values)
+            .map(Into::<HashMap<_, _>>::into)
             .collect::<Vec<_>>(),
     })
 }
