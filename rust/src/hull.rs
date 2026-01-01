@@ -14,12 +14,8 @@ impl Hull {
     where
         W: std::io::Write + Copy,
     {
-        use std::io::{BufWriter, Write};
-
-        let mut buffered_out_w = BufWriter::new(out_w);
-        let hull_json = serde_json::to_string(self)?;
-        writeln!(buffered_out_w, "{}\n", &hull_json)?;
-
-        Ok(())
+        json::write(self, out_w)
     }
 }
+
+mod json;

@@ -2,9 +2,10 @@ use beancount_parser_lima::{
     self as parser, BeancountParser, BeancountSources, ParseError, ParseSuccess, Spanned,
 };
 use color_eyre::eyre::{eyre, Result};
+use serde::Serialize;
 use std::{collections::HashSet, io::Write, path::Path};
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub(crate) struct Digest {
     pub(crate) accids: hashbrown::HashMap<String, String>,
     pub(crate) txnids: HashSet<String>,
@@ -56,6 +57,13 @@ impl Digest {
                 Err(eyre!("parse error"))
             }
         }
+    }
+
+    pub(crate) fn write<W>(&self, out_w: W) -> Result<()>
+    where
+        W: std::io::Write + Copy,
+    {
+        json::write(self, out_w)
     }
 }
 
@@ -306,3 +314,5 @@ fn count_accounts<'a, I>(
         }
     }
 }
+
+mod json;

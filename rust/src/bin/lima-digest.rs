@@ -3,7 +3,7 @@ use color_eyre::eyre::Result;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(version, about = "Digest a Beancount file as EDN for Lima", long_about = None)]
+#[command(version, about = "Digest a Beancount file as JSON for Lima", long_about = None)]
 struct Cli {
     /// Beancount file path
     beanpath: PathBuf,
@@ -35,6 +35,3 @@ const NARRATION2_KEY: &str = "narration2";
 #[path = "../digest.rs"]
 mod digest;
 use digest::Digest;
-
-#[path = "../edn.rs"]
-mod edn;
