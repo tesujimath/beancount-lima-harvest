@@ -29,12 +29,12 @@
                                 " matching path-globs in " (:path config)))))
     (throw (Exception. (str "no classifiers specified in " (:path config))))))
 
-(defn augment-with-hdr-fn
+(defn augment
   "Resolve the hdr-fn field if any to augment the hdr"
-  [classified digest]
+  [digest classified]
   (let [hdr-fn-sym (:hdr-fn classified)
         hdr-fn (and hdr-fn-sym (resolve hdr-fn-sym))]
-    (cond-> classified hdr-fn (hdr-fn digest))))
+    (if hdr-fn (hdr-fn digest classified) classified)))
 
 (defn ingest
   "Ingest an import file once it has been classified"

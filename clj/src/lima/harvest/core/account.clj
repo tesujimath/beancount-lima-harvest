@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]))
 
 (defn infer-from-path
-  [classified digest]
+  [digest classified]
   (let [accids (or (and digest (:accids digest)) {})
         path (:path classified)
         matching (filterv #(str/includes? path %) (keys accids))]
