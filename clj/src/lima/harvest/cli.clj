@@ -9,7 +9,7 @@
   (let [config (if config-path
                  (adapter/read-config config-path)
                  adapter/DEFAULT-CONFIG)
-        digest (and beanpath (beanfile/digest beanpath))]
+        digest (if beanpath (beanfile/digest beanpath) beanfile/EMPTY-DIGEST)]
     (adapter/harvest config digest import-paths)))
 
 (def CONFIGURATION

@@ -95,11 +95,25 @@
              #(realize-txn (:txn realizer) (:txn-fn realizer) (:hdr ingested) %)
              (:txns ingested))}))
 
-(defn harvest
-  "Harvest files"
+(defn dedupe
+  "Dedupe with respect to txnids in the digest"
+  [txnids realized]
+  (assoc realized
+    :txns (filterv #(not (if-let [txnid (:txnid %)] (contains? txnids txnid)))
+            (:txns realized))))
+
+(defn harvest-one
+  "Harvest a single file as far as realizing"
+  [config digest import-path]
+  (->> import-path
+       (classify config)
+       (augment digest)
+       (ingest)
+       (realize config)
+       (dedupe (:txnids digest))))
+
+(defn harvest-all
+  "Harvest several files"
   [config digest import-paths]
-  (let [classifieds (mapv #(classify config %) import-paths)
-        augmenteds (mapv #(augment-with-hdr-fn % digest) classifieds)
-        ingesteds (mapv ingest augmenteds)
-        realizeds (mapv #(realize config %) ingesteds)]
+  (let [realizeds (mapv #(harvest-one config digest %) import-paths)]
     realizeds))

@@ -5,6 +5,8 @@
 
 (def readers {'time/date #(jt/local-date %)})
 
+(def EMPTY-DIGEST {:accids {}, :txnids #{}, :payees {}, :narrations {}})
+
 (defn digest
   "Read JSON from lima-digest and return or throw"
   [beancount-path]
