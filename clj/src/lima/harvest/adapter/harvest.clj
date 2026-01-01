@@ -4,7 +4,8 @@
             [clojure.java.shell :as shell]
             [lima.harvest.core.glob :as glob]
             [clojure.string :as str]
-            [java-time.api :as jt]))
+            [java-time.api :as jt]
+            [lima.harvest.core.infer :as infer]))
 
 ;; TODO better default config
 (def DEFAULT-CONFIG {:path "default config"})
@@ -114,6 +115,10 @@
     :txns (filterv #(not (if-let [txnid (:txnid %)] (contains? txnids txnid)))
             (:txns realized))))
 
+(defn infer-secondary-accounts
+  [payees narrations m]
+  (assoc m :txns (mapv (infer/secondary-accounts payees narrations) (:txns m))))
+
 (defn harvest-one
   "Harvest a single file as far as realizing"
   [config digest import-path]
@@ -122,7 +127,8 @@
        (augment digest)
        (ingest)
        (realize config digest)
-       (dedupe (:txnids digest))))
+       (dedupe (:txnids digest))
+       (infer-secondary-accounts (:payees digest) (:narrations digest))))
 
 (defn harvest-all
   "Harvest several files"
