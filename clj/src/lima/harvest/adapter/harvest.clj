@@ -17,25 +17,25 @@
     (assoc (edn/read-string config) :path config-path)))
 
 (defn classify
-  "Classify an import"
-  [config import-path]
-  (if-let [classifiers (:classifiers config)]
-    (or (some (fn [c]
-                (if-let [path-glob (:path-glob c)]
-                  (and (glob/match? path-glob import-path)
-                       (assoc c :path import-path))
-                  nil))
-              classifiers)
-        (throw (Exception. (str "failed to classify " import-path
-                                " matching path-globs in " (:path config)))))
-    (throw (Exception. (str "no classifiers specified in " (:path config))))))
+  "Classify an import.
 
-(defn augment
-  "Resolve the hdr-fn field if any to augment the hdr"
-  [digest classified]
-  (let [hdr-fn-sym (:hdr-fn classified)
-        hdr-fn (and hdr-fn-sym (resolve hdr-fn-sym))]
-    (if hdr-fn (hdr-fn digest classified) classified)))
+  And augment the header according to hdr-fn, if any."
+  [config digest import-path]
+  (if-let [classifiers (:classifiers config)]
+    (let [classified (or (some (fn [c]
+                                 (if-let [path-glob (:path-glob c)]
+                                   (and (glob/match? path-glob import-path)
+                                        (assoc c :path import-path))
+                                   nil))
+                               classifiers)
+                         (throw (Exception. (str "failed to classify "
+                                                   import-path
+                                                 " matching path-globs in "
+                                                   (:path config)))))]
+      (let [hdr-fn-sym (:hdr-fn classified)
+            hdr-fn (and hdr-fn-sym (resolve hdr-fn-sym))]
+        (if hdr-fn (hdr-fn digest classified) classified)))
+    (throw (Exception. (str "no classifiers specified in " (:path config))))))
 
 (defn ingest
   "Ingest an import file once it has been classified"
@@ -123,8 +123,7 @@
   "Harvest a single file as far as realizing"
   [config digest import-path]
   (->> import-path
-       (classify config)
-       (augment digest)
+       (classify config digest)
        (ingest)
        (realize config digest)
        (dedupe (:txnids digest))
