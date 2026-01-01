@@ -108,7 +108,7 @@
                        (infer-acc digest))
              (:txns ingested))}))
 
-(defn dedupe
+(defn dedupe-transactions
   "Dedupe with respect to txnids in the digest"
   [txnids realized]
   (assoc realized
@@ -126,7 +126,7 @@
        (classify config digest)
        (ingest)
        (realize config digest)
-       (dedupe (:txnids digest))
+       (dedupe-transactions (:txnids digest))
        (infer-secondary-accounts (:payees digest) (:narrations digest))))
 
 (defn harvest-all
