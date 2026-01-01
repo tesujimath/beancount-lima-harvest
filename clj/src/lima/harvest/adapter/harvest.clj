@@ -87,12 +87,24 @@
                   realizer))]
     (if f-sym (let [f (resolve f-sym)] (f m)) m)))
 
+(defn infer-acc
+  "Lookup the accid if any in the digest and infer the account"
+  [digest txn]
+  (if-let [accid (:accid txn)]
+    (if-let [acc (get (digest :accids) accid)]
+      (assoc txn :acc acc)
+      txn)
+    txn))
+
 (defn realize
-  "Realize an ingested file by matching"
-  [config ingested]
+  "Realize an ingested file by matching and accid lookup"
+  [config digest ingested]
   (let [realizer (get-first-matching-realizer config ingested)]
-    {:txns (mapv
-             #(realize-txn (:txn realizer) (:txn-fn realizer) (:hdr ingested) %)
+    {:txns (mapv #(->> %
+                       (realize-txn (:txn realizer)
+                                    (:txn-fn realizer)
+                                    (:hdr ingested))
+                       (infer-acc digest))
              (:txns ingested))}))
 
 (defn dedupe
@@ -109,7 +121,7 @@
        (classify config)
        (augment digest)
        (ingest)
-       (realize config)
+       (realize config digest)
        (dedupe (:txnids digest))))
 
 (defn harvest-all
