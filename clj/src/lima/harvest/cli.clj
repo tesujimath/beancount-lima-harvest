@@ -1,20 +1,23 @@
 (ns lima.harvest.cli
   (:require [cli-matic.core :as cli-matic]
             [lima.harvest.adapter.beanfile :as beanfile]
+            [lima.harvest.adapter.config :as config]
+            [lima.harvest.core.config :refer [DEFAULT-CONFIG]]
             [lima.harvest.adapter.harvest :as adapter]
             [failjure.core :as f]))
 
 (defn harvest
   "Harvest files for import"
   [{config-path :config, beanpath :context, import-paths :_arguments}]
-  (let [config (if config-path
-                 (adapter/read-config config-path)
-                 adapter/DEFAULT-CONFIG)]
-    (f/attempt-all
-      [digest (if beanpath (beanfile/digest beanpath) beanfile/EMPTY-DIGEST)
-       harvested (adapter/harvest-all config digest import-paths)]
-      harvested
-      (f/when-failed [e] (do (println (f/message e) *err*) (System/exit 1))))))
+  (f/attempt-all [config (if config-path
+                           (config/read-from-file config-path)
+                           DEFAULT-CONFIG)
+                  digest (if beanpath
+                           (beanfile/digest beanpath)
+                           beanfile/EMPTY-DIGEST)
+                  harvested (adapter/harvest-all config digest import-paths)]
+    harvested
+    (f/when-failed [e] (do (println (f/message e) *err*) (System/exit 1)))))
 
 (def CONFIGURATION
   {:command "lima-harvest",

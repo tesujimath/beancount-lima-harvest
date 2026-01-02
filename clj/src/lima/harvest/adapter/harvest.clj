@@ -6,16 +6,9 @@
             [clojure.string :as str]
             [java-time.api :as jt]
             [lima.harvest.core.infer :as infer]
+            [lima.harvest.core.realize :as realize]
             [failjure.core :as f]))
 
-;; TODO better default config
-(def DEFAULT-CONFIG {:path "default config"})
-
-(defn read-config
-  "Read harvest config from EDN file"
-  [config-path]
-  (let [config (slurp config-path)]
-    (assoc (edn/read-string config) :path config-path)))
 
 (defn classify
   "Classify an import.
@@ -56,61 +49,6 @@
           (assoc :path path)
           (update :hdr #(merge % (:hdr classified))))
       (f/fail "%s failed: %s" (str/join " " cmd) (:err ingested)))))
-
-(defn get-realizer
-  "Find the first realizer whose selector matches the ingested header"
-  [config ingested]
-  (if-let [realizers (:realizers config)]
-    (let [hdr (:hdr ingested)]
-      (or (some (fn [[m v]] (and (= m (select-keys hdr (keys m))) v)) realizers)
-          (f/fail "failed to find realizer for %s with hdr %s in %s"
-                  (:path ingested)
-                  (str hdr)
-                  (:path config))))
-    (f/fail "no realizers specified in %s" (:path config))))
-
-(defn realize-field
-  [r hdr txn]
-  (cond (string? r) r
-        (vector? r) (let [[r-k & r-args] r]
-                      (if (= :concat r-k)
-                        (str/join "" (map #(realize-field % hdr txn) r-args))
-                        (let [src (case r-k
-                                    :hdr hdr
-                                    :txn txn)
-                              [k type fmt] r-args
-                              v-raw (get src k)]
-                          (case type
-                            :date (jt/local-date fmt v-raw)
-                            :decimal (BigDecimal. v-raw)
-                            nil v-raw))))
-        ;; TODO validate this ahead of time so we can't fail here
-        :else (throw (Exception. (str "bad realizer val " r)))))
-
-(defn realize-txn
-  "Realize the transaction, and if f-sym is defined, resolve and apply that after the event."
-  [realizer f-sym hdr txn]
-  (let [m (into {}
-                (map (fn [[k v]] [k (realize-field (get realizer k) hdr txn)])
-                  realizer))]
-    (if f-sym (let [f (resolve f-sym)] (f m)) m)))
-
-(defn infer-acc
-  "Lookup the accid if any in the digest and infer the account"
-  [digest txn]
-  (if-let [accid (:accid txn)]
-    (if-let [acc (get (digest :accids) accid)]
-      (assoc txn :acc acc)
-      txn)
-    txn))
-
-(defn realize-xf
-  "Transducer to realize transactions"
-  [config digest realizer hdr]
-  (map #(->> %
-             (realize-txn (:txn realizer) (:txn-fn realizer) hdr)
-             (infer-acc digest))))
-
 (defn dedupe-xf
   "Transducer to dedupe with respect to txnids"
   [txnids]
@@ -126,8 +64,8 @@
   [config digest import-path]
   (f/attempt-all [classified (classify config digest import-path)
                   ingested (ingest classified)
-                  realizer (get-realizer config ingested)]
-    (eduction (comp (realize-xf config digest realizer (:hdr ingested))
+                  realizer (realize/get-realizer config ingested)]
+    (eduction (comp (realize/xf config digest realizer (:hdr ingested))
                     (dedupe-xf (:txnids digest))
                     (infer-secondary-accounts-xf (:payees digest)
                                                  (:narrations digest)))
