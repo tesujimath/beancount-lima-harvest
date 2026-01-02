@@ -47,10 +47,8 @@
 (defn ingest
   "Ingest an import file once it has been classified"
   [classified]
-  (println classified)
   (let [{:keys [ingester path]} classified
         cmd (substitute :path path ingester)
-        dummy (println path ingester cmd)
         ingested (apply shell/sh cmd)]
     (if (= (:exit ingested) 0)
       (-> (:out ingested)
@@ -106,40 +104,44 @@
       txn)
     txn))
 
-(defn realize
+(defn realize-xf
   "Transducer to realize transactions"
   [config digest realizer hdr]
   (map #(->> %
              (realize-txn (:txn realizer) (:txn-fn realizer) hdr)
              (infer-acc digest))))
 
-(defn dedupe-transactions
+(defn dedupe-xf
   "Transducer to dedupe with respect to txnids"
   [txnids]
   (filter #(not (if-let [txnid (:txnid %)] (contains? txnids txnid)))))
 
-(defn infer-secondary-accounts
+(defn infer-secondary-accounts-xf
   "Transducer to infer secondary accounrs from payees and narrations"
   [payees narrations]
   (map (infer/secondary-accounts payees narrations)))
 
-(defn harvest-one
-  "Harvest a single file as far as realizing"
+(defn harvest-one-txns
+  "Harvest a file into txns eduction"
   [config digest import-path]
   (f/attempt-all [classified (classify config digest import-path)
                   ingested (ingest classified)
-                  realizer (get-realizer config ingested)
-                  txns (into []
-                             (comp
-                               (realize config digest realizer (:hdr ingested))
-                               (dedupe-transactions (:txnids digest))
-                               (infer-secondary-accounts (:payees digest)
-                                                         (:narrations digest)))
-                             (:txns ingested))]
-    (assoc ingested :txns txns)))
+                  realizer (get-realizer config ingested)]
+    (eduction (comp (realize-xf config digest realizer (:hdr ingested))
+                    (dedupe-xf (:txnids digest))
+                    (infer-secondary-accounts-xf (:payees digest)
+                                                 (:narrations digest)))
+              (:txns ingested))))
+
+(defn harvest-step
+  "A single reducer step for wrapping the eduction and propagating failure"
+  [config digest]
+  (fn [fallible-result import-path]
+    (f/attempt-all [txns (harvest-one-txns config digest import-path)
+                    result fallible-result]
+      (into result txns))))
 
 (defn harvest-all
   "Harvest several files"
   [config digest import-paths]
-  (let [realizeds (mapv #(harvest-one config digest %) import-paths)]
-    realizeds))
+  (reduce (harvest-step config digest) [] import-paths))
