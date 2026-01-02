@@ -1,5 +1,6 @@
 (ns lima.harvest.core.account
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [failjure.core :as f]))
 
 (defn infer-from-path
   [digest classified]
@@ -7,8 +8,6 @@
         path (:path classified)
         matching (filterv #(str/includes? path %) (keys accids))]
     (case (count matching)
-      0 (throw (Exception. (str/join " " ["no accid matches" path])))
+      0 (f/fail "infer-from-path failed - no accid matches %s" path)
       1 (update classified :hdr #(assoc % :accid (first matching)))
-      (throw (Exception. (str/join " "
-                                   (concat ["multiple accids match" path ":"]
-                                           matching)))))))
+      (f/fail "multiple accids match %s: " path (str/join " " matching)))))
