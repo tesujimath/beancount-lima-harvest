@@ -43,7 +43,7 @@ struct CcStmtTrnRs {
 #[serde(rename_all = "UPPERCASE")]
 struct StmtRs {
     curdef: String,
-    bankacctfrom: BankAcctFrom,
+    bankacctfrom: Option<BankAcctFrom>,
     banktranlist: Option<BankTranList>,
     ledgerbal: LedgerBal,
 }
@@ -52,7 +52,7 @@ struct StmtRs {
 #[serde(rename_all = "UPPERCASE")]
 struct CcStmtRs {
     curdef: String,
-    ccacctfrom: CcAcctFrom,
+    ccacctfrom: Option<CcAcctFrom>,
     banktranlist: Option<BankTranList>,
     ledgerbal: LedgerBal,
 }
@@ -135,7 +135,10 @@ pub(crate) fn parse(
                 stmttrnrs.stmtrs.iter().map(|stmtrs| {
                     (
                         &stmtrs.curdef,
-                        &stmtrs.bankacctfrom.acctid,
+                        stmtrs
+                            .bankacctfrom
+                            .as_ref()
+                            .map(|bankacctfrom| &bankacctfrom.acctid),
                         stmtrs.banktranlist.as_ref(),
                         &stmtrs.ledgerbal,
                     )
@@ -147,35 +150,46 @@ pub(crate) fn parse(
                 ccstmttrnrs.ccstmtrs.iter().map(|ccstmtrs| {
                     (
                         &ccstmtrs.curdef,
-                        &ccstmtrs.ccacctfrom.acctid,
+                        ccstmtrs
+                            .ccacctfrom
+                            .as_ref()
+                            .map(|ccacctfrom| &ccacctfrom.acctid),
                         ccstmtrs.banktranlist.as_ref(),
                         &ccstmtrs.ledgerbal,
                     )
                 })
             })
         }))
-        .map(|(curdef, acctid, banktranlist, ledgerbal)| Hull {
-            hdr: [
-                (OFXHEADER, ofxheader.to_string()),
-                (VERSION, version.to_string()),
-                (CURDEF, curdef.clone()),
-                (ACCTID, acctid.clone()),
-                (BALAMT, ledgerbal.balamt.clone()),
-                (DTASOF, truncate_yyyymmdd(ledgerbal.dtasof.clone())),
-            ]
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v))
-            .collect::<HashMap<_, _>>(),
-            txns: banktranlist
-                .iter()
-                .flat_map(|banktranlist| {
-                    banktranlist
-                        .stmttrns
-                        .iter()
-                        .map(Into::<HashMap<_, _>>::into)
-                })
-                .collect::<Vec<_>>(),
-        })
+        .map(
+            |(curdef, acctid, banktranlist, ledgerbal): (
+                &String,
+                Option<&String>,
+                Option<&BankTranList>,
+                &LedgerBal,
+            )| Hull {
+                hdr: [
+                    (OFXHEADER, ofxheader.to_string()),
+                    (VERSION, version.to_string()),
+                    (CURDEF, curdef.clone()),
+                    (BALAMT, ledgerbal.balamt.clone()),
+                    (DTASOF, truncate_yyyymmdd(ledgerbal.dtasof.clone())),
+                ]
+                .into_iter()
+                // conditionally include acctid if exists
+                .chain(acctid.map(|acctid| (ACCTID, acctid.clone())))
+                .map(|(k, v)| (k.to_string(), v))
+                .collect::<HashMap<_, _>>(),
+                txns: banktranlist
+                    .iter()
+                    .flat_map(|banktranlist| {
+                        banktranlist
+                            .stmttrns
+                            .iter()
+                            .map(Into::<HashMap<_, _>>::into)
+                    })
+                    .collect::<Vec<_>>(),
+            },
+        )
         .collect::<Vec<_>>();
 
     Ok(Hulls(hulls))
