@@ -45,7 +45,7 @@ struct StmtRs {
     curdef: String,
     bankacctfrom: Option<BankAcctFrom>,
     banktranlist: Option<BankTranList>,
-    ledgerbal: LedgerBal,
+    ledgerbal: Option<LedgerBal>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -54,7 +54,7 @@ struct CcStmtRs {
     curdef: String,
     ccacctfrom: Option<CcAcctFrom>,
     banktranlist: Option<BankTranList>,
-    ledgerbal: LedgerBal,
+    ledgerbal: Option<LedgerBal>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -140,7 +140,7 @@ pub(crate) fn parse(
                             .as_ref()
                             .map(|bankacctfrom| &bankacctfrom.acctid),
                         stmtrs.banktranlist.as_ref(),
-                        &stmtrs.ledgerbal,
+                        stmtrs.ledgerbal.as_ref(),
                     )
                 })
             })
@@ -155,7 +155,7 @@ pub(crate) fn parse(
                             .as_ref()
                             .map(|ccacctfrom| &ccacctfrom.acctid),
                         ccstmtrs.banktranlist.as_ref(),
-                        &ccstmtrs.ledgerbal,
+                        ccstmtrs.ledgerbal.as_ref(),
                     )
                 })
             })
@@ -165,18 +165,22 @@ pub(crate) fn parse(
                 &String,
                 Option<&String>,
                 Option<&BankTranList>,
-                &LedgerBal,
+                Option<&LedgerBal>,
             )| Hull {
                 hdr: [
                     (OFXHEADER, ofxheader.to_string()),
                     (VERSION, version.to_string()),
                     (CURDEF, curdef.clone()),
-                    (BALAMT, ledgerbal.balamt.clone()),
-                    (DTASOF, truncate_yyyymmdd(ledgerbal.dtasof.clone())),
                 ]
                 .into_iter()
                 // conditionally include acctid if exists
                 .chain(acctid.map(|acctid| (ACCTID, acctid.clone())))
+                // conditionally include legerbal fields if exist
+                .chain(ledgerbal.map(|ledgerbal| (BALAMT, ledgerbal.balamt.clone())))
+                .chain(
+                    ledgerbal
+                        .map(|ledgerbal| (DTASOF, truncate_yyyymmdd(ledgerbal.dtasof.clone()))),
+                )
                 .map(|(k, v)| (k.to_string(), v))
                 .collect::<HashMap<_, _>>(),
                 txns: banktranlist
